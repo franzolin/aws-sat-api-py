@@ -9,6 +9,8 @@ from datetime import datetime, timezone
 from typing import Union
 
 from boto3.session import Session as boto3_session
+from botocore import UNSIGNED
+from botocore.client import Config
 
 from aws_sat_api import utils, aws
 
@@ -104,7 +106,7 @@ def landsat(path, row, full=False):
 
     # WARNING: This is fast but not thread safe
     session = boto3_session(region_name=region)
-    s3 = session.client('s3')
+    s3 = session.client('s3', config=Config(signature_version=UNSIGNED))
 
     _ls_worker = partial(aws.list_directory, landsat_bucket, s3=s3)
     with futures.ThreadPoolExecutor(max_workers=2) as executor:
@@ -131,7 +133,7 @@ def cbers(path, row, sensor='MUX'):
     prefix = f'CBERS4/{sensor}/{path}/{row}/'
 
     session = boto3_session(region_name=region)
-    s3 = session.client('s3')
+    s3 = session.client('s3', config=Config(signature_version=UNSIGNED))
 
     results = aws.list_directory(cbers_bucket, prefix, s3=s3)
     scene_ids = [os.path.basename(key.strip('/')) for key in results]
